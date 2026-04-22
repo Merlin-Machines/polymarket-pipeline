@@ -13,6 +13,7 @@ class Settings:
     app_name: str
     env: str
     dry_run: bool
+    execution_enabled: bool
     live_trading_enabled: bool
     poll_interval_seconds: int
     max_positions: int
@@ -29,6 +30,7 @@ def load_settings() -> Settings:
         app_name=os.getenv("APP_NAME", "polymarket_v2"),
         env=os.getenv("APP_ENV", "dev"),
         dry_run=_as_bool(os.getenv("DRY_RUN", "1"), True),
+        execution_enabled=_as_bool(os.getenv("EXECUTION_ENABLED", "0"), False),
         live_trading_enabled=_as_bool(os.getenv("LIVE_TRADING_ENABLED", "0"), False),
         poll_interval_seconds=int(os.getenv("POLL_INTERVAL_SECONDS", "45")),
         max_positions=int(os.getenv("MAX_POSITIONS", "10")),
