@@ -20,6 +20,7 @@ def run_once() -> None:
     )
 
     print(f"[{settings.app_name}] dry_run={settings.dry_run} env={settings.env}")
+    print(f"[execution] enabled={settings.execution_enabled} live_trading_enabled={settings.live_trading_enabled}")
     print(f"[binance] {binance.status().reason}")
     print("[markets] fetching...")
     markets = list(market_provider.fetch_markets())
@@ -40,11 +41,17 @@ def run_once() -> None:
     opportunities = strategy.find_opportunities(markets, prices, candle_analysis)
     print(f"[strategy] opportunities={len(opportunities)}")
     for item in opportunities[:5]:
-        order_id = broker.place(item)
-        print(
-            f"[order] {order_id} market={item.market_id} side={item.side.value} "
-            f"edge={item.edge:.2%} size=${item.size_usd:.2f}"
-        )
+        if settings.execution_enabled and not settings.dry_run and settings.live_trading_enabled:
+            order_id = broker.place(item)
+            print(
+                f"[order] {order_id} market={item.market_id} side={item.side.value} "
+                f"edge={item.edge:.2%} size=${item.size_usd:.2f}"
+            )
+        else:
+            print(
+                f"[monitor-only] market={item.market_id} side={item.side.value} "
+                f"edge={item.edge:.2%} size=${item.size_usd:.2f}"
+            )
 
 
 if __name__ == "__main__":
