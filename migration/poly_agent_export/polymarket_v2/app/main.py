@@ -1,14 +1,15 @@
 from polymarket_v2.app.settings import load_settings
+from polymarket_v2.connectors.price_feeds import analyze_candles, get_5m_candles, get_spot_price
 from polymarket_v2.connectors.binance_account import BinanceAccountClient
 from polymarket_v2.connectors.polymarket_gamma import PolymarketGammaProvider
 from polymarket_v2.execution.dry_run_broker import DryRunBroker
-from polymarket_v2.strategies.weather_ranges import WeatherRangesStrategy
+from polymarket_v2.strategies.legacy_hybrid import LegacyHybridStrategy
 
 
 def run_once() -> None:
     settings = load_settings()
     market_provider = PolymarketGammaProvider()
-    strategy = WeatherRangesStrategy(
+    strategy = LegacyHybridStrategy(
         edge_threshold=settings.edge_threshold,
         max_trade_usd=settings.max_trade_usd,
     )
@@ -24,7 +25,19 @@ def run_once() -> None:
     markets = list(market_provider.fetch_markets())
     print(f"[markets] loaded={len(markets)}")
 
-    opportunities = strategy.find_opportunities(markets)
+    prices: dict[str, float] = {}
+    for symbol in ("BTC", "ETH"):
+        price = get_spot_price(symbol)
+        if price:
+            prices[symbol] = price
+
+    candle_analysis: dict[str, dict] = {}
+    for symbol in ("BTC", "ETH"):
+        candles = get_5m_candles(symbol)
+        if candles:
+            candle_analysis[symbol] = analyze_candles(candles)
+
+    opportunities = strategy.find_opportunities(markets, prices, candle_analysis)
     print(f"[strategy] opportunities={len(opportunities)}")
     for item in opportunities[:5]:
         order_id = broker.place(item)
